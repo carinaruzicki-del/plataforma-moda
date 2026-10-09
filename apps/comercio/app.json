@@ -1,0 +1,37 @@
+{
+  "expo": {
+    "name": "Mi tienda",
+    "slug": "plataforma-moda-comercio",
+    "scheme": "mitienda",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "backgroundColor": "#F7F4F0",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.plataformamoda.comercio",
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "Para subir fotos y videos de tus prendas.",
+        "NSCameraUsageDescription": "Para sacar fotos de tus prendas."
+      }
+    },
+    "android": {
+      "package": "com.plataformamoda.comercio",
+      "adaptiveIcon": { "backgroundColor": "#754653" }
+    },
+    "web": { "bundler": "metro", "output": "single" },
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Para subir fotos y videos de tus prendas.",
+          "cameraPermission": "Para sacar fotos de tus prendas."
+        }
+      ]
+    ],
+    "experiments": { "typedRoutes": false }
+  }
+}

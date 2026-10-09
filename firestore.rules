@@ -1,0 +1,103 @@
+rules_version = '2';
+
+// Reglas de seguridad de la base de datos.
+// Principio: cada dato cuelga de su tienda; el dinero, el stock y los pedidos solo los
+// escribe el servidor (Cloud Functions con permisos de administrador, que no pasan por estas reglas).
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function member(storeId) {
+      return signedIn() && exists(/databases/$(database)/documents/stores/$(storeId)/members/$(request.auth.uid));
+    }
+    function owner(storeId) {
+      return signedIn()
+        && get(/databases/$(database)/documents/stores/$(storeId)/members/$(request.auth.uid)).data.role == 'duena';
+    }
+    function onlyChanges(fields) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(fields);
+    }
+
+    // ---------------------------------------------------------- planes y direcciones (lectura pública)
+    match /plans/{planId} {
+      allow read: if true;
+      allow write: if false;
+    }
+    match /subdomains/{sub} {
+      allow read: if true;
+      allow write: if false; // la reserva la hace createStore en una transacción
+    }
+
+    // ---------------------------------------------------------- tiendas
+    match /stores/{storeId} {
+      allow read: if resource.data.status == 'activa' || member(storeId);
+      allow create, delete: if false; // createStore
+      // La dueña edita la vitrina; plan, estado, dirección y pagos los cambia el servidor.
+      allow update: if owner(storeId)
+        && onlyChanges(['name', 'tagline', 'accentColor', 'logoPath', 'contact', 'pickup', 'flatShipping', 'updatedAt'])
+        && request.resource.data.name is string && request.resource.data.name.size() >= 2;
+
+      match /members/{uid} {
+        allow read: if member(storeId);
+        allow create: if owner(storeId) && request.resource.data.role == 'empleada' && request.resource.data.uid == uid;
+        allow delete: if owner(storeId) && resource.data.role == 'empleada';
+        allow update: if false;
+      }
+
+      // Credenciales de Mercado Pago: nadie las lee desde una app.
+      match /private/{doc} {
+        allow read, write: if false;
+      }
+
+      // Prendas: lectura pública de las publicadas; se guardan con saveProduct (cuida el stock apartado).
+      match /products/{productId} {
+        allow read: if resource.data.published == true || member(storeId);
+        allow write: if false;
+      }
+
+      match /sections/{sectionId} {
+        allow read: if true;
+        allow create, update: if member(storeId)
+          && request.resource.data.name is string
+          && request.resource.data.name.size() >= 2
+          && request.resource.data.order is int;
+        allow delete: if member(storeId);
+      }
+
+      match /settings/{doc} {
+        allow read: if true;
+        allow write: if member(storeId) && doc == 'home';
+      }
+
+      match /orders/{orderId} {
+        allow read: if member(storeId);
+        allow write: if false;
+      }
+
+      match /returns/{returnId} {
+        allow read: if member(storeId);
+        allow write: if false;
+      }
+    }
+
+    // Cada persona ve en qué tiendas trabaja (la app del comercio lo consulta al iniciar sesión).
+    match /{path=**}/members/{memberId} {
+      allow read: if signedIn() && resource.data.uid == request.auth.uid;
+    }
+
+    // La clienta con cuenta lista sus pedidos de todas las tiendas (consulta por customer.uid).
+    match /{path=**}/orders/{orderId} {
+      allow read: if signedIn() && resource.data.customer.uid == request.auth.uid;
+    }
+
+    // ---------------------------------------------------------- clientas
+    match /users/{uid} {
+      allow read, write: if signedIn() && request.auth.uid == uid;
+    }
+
+    // Uso interno del servidor.
+    match /oauthStates/{doc} { allow read, write: if false; }
+    match /processedEvents/{doc} { allow read, write: if false; }
+  }
+}

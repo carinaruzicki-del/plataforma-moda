@@ -1,0 +1,23 @@
+{
+  "name": "@plataforma/core",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Tipos, reglas de negocio y asesor de looks compartidos por la tienda, la app del comercio y el servidor.",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "typescript": "~5.9.3",
+    "vitest": "^3.2.7"
+  }
+}

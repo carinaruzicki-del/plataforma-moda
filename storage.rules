@@ -1,0 +1,36 @@
+rules_version = '2';
+
+// Fotos y videos de cada tienda. Se ven públicamente (la tienda es pública);
+// solo la dueña y sus empleadas pueden subir o borrar.
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    function member(storeId) {
+      return request.auth != null
+        && firestore.exists(/databases/(default)/documents/stores/$(storeId)/members/$(request.auth.uid));
+    }
+    function validMedia() {
+      return (request.resource.contentType.matches('image/(jpeg|png|webp)') && request.resource.size < 15 * 1024 * 1024)
+        || (request.resource.contentType.matches('video/(mp4|webm)') && request.resource.size < 50 * 1024 * 1024);
+    }
+
+    match /stores/{storeId}/media/{file} {
+      allow read: if true;
+      allow create: if member(storeId) && validMedia();
+      allow update: if false;
+      allow delete: if member(storeId);
+    }
+
+    match /stores/{storeId}/logo/{file} {
+      allow read: if true;
+      allow write: if member(storeId)
+        && request.resource.contentType.matches('image/(png|jpeg|webp|svg\\+xml)')
+        && request.resource.size < 2 * 1024 * 1024;
+      allow delete: if member(storeId);
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

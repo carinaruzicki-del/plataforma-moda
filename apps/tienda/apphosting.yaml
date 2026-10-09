@@ -1,0 +1,11 @@
+# Configuración de Firebase App Hosting para la tienda web.
+runConfig:
+  minInstances: 0
+  maxInstances: 10
+  concurrency: 80
+  memoryMiB: 512
+env:
+  - variable: NEXT_PUBLIC_PLATFORM_DOMAIN
+    value: nuestramarca.com.ar
+  - variable: NEXT_PUBLIC_USE_EMULATORS
+    value: "0"

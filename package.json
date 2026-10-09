@@ -1,0 +1,29 @@
+{
+  "name": "plataforma-moda",
+  "private": true,
+  "description": "Plataforma de tiendas online para comercios de indumentaria, con asesor de looks ¿Qué me pongo?",
+  "workspaces": [
+    "packages/*",
+    "functions",
+    "apps/tienda",
+    "apps/comercio",
+    "rules-tests"
+  ],
+  "scripts": {
+    "test": "npm run test -w @plataforma/core && npm run test -w functions",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "build:core": "npm run build -w @plataforma/core",
+    "build:functions": "npm run build -w functions",
+    "dev:tienda": "npm run dev -w tienda",
+    "dev:comercio": "npm run start -w comercio",
+    "emulators": "firebase emulators:start",
+    "seed": "node scripts/seed-emulator.mjs"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "overrides": {
+    "react": "19.1.0",
+    "react-dom": "19.1.0"
+  }
+}
