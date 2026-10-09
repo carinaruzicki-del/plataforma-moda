@@ -75,13 +75,16 @@ export function StoreProvider({ subdomain, children }: { subdomain: string; chil
         if (!storeId) return setStatus('no_existe');
         cartRef.current = readCart(storeId);
         setCart(cartRef.current);
-        const onErr = () => setStatus('error');
+        const onErr = (e: unknown) => {
+          console.error('[tienda] Error leyendo la base', e);
+          setStatus('error');
+        };
         unsubs = [
           onSnapshot(doc(db, 'stores', storeId), (s) => {
             if (!s.exists()) return setStatus('no_existe');
             setStore({ ...(s.data() as Store), id: s.id });
             setStatus('lista');
-          }, () => setStatus('no_existe')),
+          }, onErr),
           onSnapshot(
             query(collection(db, 'stores', storeId, 'products'), where('published', '==', true)),
             (s) => setProducts(s.docs.map((d) => ({ ...(d.data() as Product), id: d.id }))),
@@ -94,7 +97,8 @@ export function StoreProvider({ subdomain, children }: { subdomain: string; chil
             setHome((s.data() as HomeSettings | undefined) ?? { banner: [], sizeGuide: [] }),
           onErr),
         ];
-      } catch {
+      } catch (e) {
+        console.error('[tienda] No se pudo abrir la tienda', e);
         if (!cancelled) setStatus('error');
       }
     })();

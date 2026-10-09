@@ -30,6 +30,14 @@ function Chrome({ children }: { children: ReactNode }) {
   if (status === 'cargando') {
     return <div className="wrap center"><b style={{ fontFamily: 'var(--font-display)', fontSize: 22 }}>Abriendo la tienda…</b></div>;
   }
+  if (status === 'error') {
+    return (
+      <div className="wrap center">
+        <h1 style={{ fontSize: 28 }}>No pudimos cargar la tienda</h1>
+        <p className="muted">Revisá tu conexión y recargá la página.</p>
+      </div>
+    );
+  }
   if (status === 'no_existe' || !store) {
     return (
       <div className="wrap center">
@@ -37,9 +45,6 @@ function Chrome({ children }: { children: ReactNode }) {
         <p className="muted">Revisá la dirección o pedile el link al local.</p>
       </div>
     );
-  }
-  if (status === 'error') {
-    return <div className="wrap center"><h1 style={{ fontSize: 28 }}>No pudimos cargar la tienda</h1><p className="muted">Revisá tu conexión y recargá la página.</p></div>;
   }
 
   const is = (p: string) => (p === '/' ? rel === '/' : rel.startsWith(p));
