@@ -31,6 +31,8 @@ await db.doc(`stores/${storeId}`).set({
   // Para probar el plan gratis, cambiá a 'inicial' (o editalo en el Emulator UI).
   plan: process.env.SEED_PLAN || 'profesional',
   theme: { palette: 'ciruela', layout: 'clasico' },
+  // Datos de prueba (CUIT inventado con dígito verificador válido).
+  fiscal: { legalName: 'Tienda Demo (datos de prueba)', cuit: '20123456786', address: 'Av. Corrientes 1234, CABA', taxStatus: 'responsable_inscripto' },
   status: 'activa',
   logoPath: null,
   tagline: 'Tu estilo, tus planes',

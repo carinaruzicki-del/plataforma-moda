@@ -1,6 +1,6 @@
 'use client';
 
-import { CATEGORIES, CATEGORY_LABEL, available, totalAvailable, type Product } from '@plataforma/core';
+import { CATEGORIES, CATEGORY_LABEL, available, sortSizes, totalAvailable, type Product } from '@plataforma/core';
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import { useStore } from '@/lib/store-context';
@@ -61,7 +61,7 @@ export function Catalog({ sectionId }: { sectionId?: string }) {
           {CATEGORIES.filter((c) => base.some((p) => p.category === c)).map((c) => <option key={c} value={c}>{CATEGORY_LABEL[c]}</option>)}
         </select>
         <select value={f.color} onChange={set('color')} aria-label="Color"><option value="">Todos los colores</option>{uniq(base.map((p) => p.color)).map((c) => <option key={c}>{c}</option>)}</select>
-        <select value={f.size} onChange={set('size')} aria-label="Talle"><option value="">Todos los talles</option>{uniq(base.flatMap((p) => p.variants.map((v) => v.size))).map((s) => <option key={s}>{s}</option>)}</select>
+        <select value={f.size} onChange={set('size')} aria-label="Talle"><option value="">Todos los talles</option>{sortSizes(base.flatMap((p) => p.variants.map((v) => v.size))).map((s) => <option key={s}>{s}</option>)}</select>
         {brands.length > 0 && <select value={f.brand} onChange={set('brand')} aria-label="Marca"><option value="">Todas las marcas</option>{brands.map((b) => <option key={b}>{b}</option>)}</select>}
         <select value={f.sort} onChange={set('sort')} aria-label="Ordenar"><option value="nuevo">Novedades</option><option value="menor">Menor precio</option><option value="mayor">Mayor precio</option></select>
       </div>

@@ -13,6 +13,7 @@ import {
 } from '@plataforma/core';
 import Link from 'next/link';
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { NetPrice } from '@/components/ProductDetail';
 import { useAccount } from '@/lib/account';
 import { callFn, errorMessage } from '@/lib/firebase';
 import { saveOrder } from '@/lib/my-orders';
@@ -237,9 +238,14 @@ export default function CheckoutPage() {
         </div>
         <div className="total-row"><span>Total</span><span className="num">{formatPesos(total)}</span></div>
         <p className="small muted" style={{ margin: 0 }}>Precio final con IVA incluido.</p>
+        <NetPrice price={total} label="Total sin impuestos nacionales" />
         {error && <p className="error-text" role="alert">{error}</p>}
         <button className="btn block" disabled={busy || !canShip}>{busy ? 'Preparando el pago…' : `Pagar ${formatPesos(total)}`}</button>
         <p className="small muted" style={{ margin: 0 }}>Apartamos tus prendas por 30 minutos mientras pagás.</p>
+        <p className="small muted" style={{ margin: 0 }}>
+          Al pagar aceptás los <Link className="link" href={href('/legales#terminos')} target="_blank">términos de la tienda</Link> y
+          la <Link className="link" href={href('/legales#privacidad')} target="_blank">política de privacidad</Link>. Tenés 10 días para arrepentirte de la compra.
+        </p>
       </aside>
     </form>
   );

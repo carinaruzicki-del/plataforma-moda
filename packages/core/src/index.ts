@@ -6,3 +6,4 @@ export * from './advisor';
 export * from './validation';
 export * from './theme';
 export * from './shipping';
+export * from './legal';

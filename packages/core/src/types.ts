@@ -1,4 +1,5 @@
 import type { Category, Fit, Line, Occasion, SectionKind, Style } from './catalog';
+import type { StoreFiscal } from './legal';
 import type { DesignFeatures, StoreTheme } from './theme';
 
 /** Milisegundos desde 1970 (Date.now()). Se usa en vez de Timestamp para que el núcleo no dependa de Firebase. */
@@ -44,6 +45,8 @@ export interface Store {
   accentColor?: string;
   /** Paleta, color, tipografía y diseño. Lo que no incluye el plan se ignora al mostrar la tienda. */
   theme?: StoreTheme;
+  /** Datos de la vendedora: se muestran en el pie de la tienda (Ley 24.240). */
+  fiscal?: StoreFiscal;
   tagline?: string;
   contact: {
     email: string;

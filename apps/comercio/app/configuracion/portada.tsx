@@ -1,8 +1,8 @@
-import type { BannerSlide, SizeGuideRow } from '@plataforma/core';
+import type { BannerLayout, BannerSlide, SizeGuideRow } from '@plataforma/core';
 import { Image } from 'expo-image';
 import { doc, setDoc } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
-import { Text, TextInput, View } from 'react-native';
+import { Switch, Text, TextInput, View } from 'react-native';
 import { db, errorMessage, mediaUrl } from '@/lib/firebase';
 import { useMerchant } from '@/lib/merchant';
 import { pickAndUpload } from '@/lib/upload';
@@ -12,6 +12,9 @@ export default function HomeSettingsScreen() {
   const { storeId, home, sections } = useMerchant();
   const [banner, setBanner] = useState<BannerSlide[]>([]);
   const [guide, setGuide] = useState<SizeGuideRow[]>([]);
+  const [layout, setLayout] = useState<BannerLayout>('carrusel');
+  const [autoplay, setAutoplay] = useState(true);
+  const [interval, setIntervalSec] = useState(6);
   const [loaded, setLoaded] = useState(false);
   const [busy, setBusy] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -21,6 +24,9 @@ export default function HomeSettingsScreen() {
     if (loaded) return;
     setBanner(home.banner);
     setGuide(home.sizeGuide);
+    setLayout(home.bannerLayout ?? 'carrusel');
+    setAutoplay(home.bannerAutoplay ?? true);
+    setIntervalSec(home.bannerIntervalSec ?? 6);
     setLoaded(true);
   }, [home, loaded]);
 
@@ -41,6 +47,9 @@ export default function HomeSettingsScreen() {
     try {
       await setDoc(doc(db, 'stores', storeId!, 'settings', 'home'), {
         banner: banner.map((b) => ({ media: b.media, title: b.title?.trim() ?? '', subtitle: b.subtitle?.trim() ?? '', sectionId: b.sectionId ?? null })),
+        bannerLayout: layout,
+        bannerAutoplay: autoplay,
+        bannerIntervalSec: interval,
         sizeGuide: guide.filter((g) => g.size.trim()).map((g) => ({ size: g.size.trim(), equivalence: g.equivalence ?? '', bustCm: g.bustCm ?? '', waistCm: g.waistCm ?? '', hipCm: g.hipCm ?? '' })),
       });
       setMsg({ text: 'Guardado. Ya se ve en la tienda.', tone: 'ok' });
@@ -65,7 +74,35 @@ export default function HomeSettingsScreen() {
     <Screen>
       <Card>
         <Title size={22}>Banner de portada</Title>
-        <P small muted>Fotos o videos MP4. Se pasan solos cada 6 segundos, en este orden.</P>
+        <P small muted>Ocupa todo el ancho de la tienda. Fotos o videos MP4.</P>
+        <View>
+          <Label>¿Cómo se muestra?</Label>
+          <Chips
+            options={['carrusel', 'fija', 'mosaico'] as const}
+            value={layout}
+            onChange={setLayout}
+            labels={{ carrusel: 'Carrusel', fija: 'Una sola foto o video', mosaico: 'Mosaico (2 o 3 juntas)' }}
+          />
+          <P small muted>
+            {layout === 'carrusel'
+              ? 'Se pasan una tras otra, en este orden. Los videos avanzan cuando terminan.'
+              : layout === 'fija'
+                ? 'Se muestra solo la primera de la lista.'
+                : 'Se ven las primeras 2 o 3 una al lado de la otra; la primera lleva el texto. En el celular quedan apiladas.'}
+          </P>
+        </View>
+        {layout === 'carrusel' && (
+          <View style={{ gap: 8 }}>
+            <View style={s.between}>
+              <P>Pasar solas</P>
+              <Switch value={autoplay} onValueChange={setAutoplay} trackColor={{ true: '#754653', false: '#E7E1DB' }} thumbColor="#fff" />
+            </View>
+            {autoplay && (
+              <Chips options={['4', '6', '8', '10'] as const} value={String(interval) as '4' | '6' | '8' | '10'} onChange={(v) => setIntervalSec(Number(v))}
+                labels={{ '4': 'Cada 4 s', '6': 'Cada 6 s', '8': 'Cada 8 s', '10': 'Cada 10 s' }} />
+            )}
+          </View>
+        )}
         {banner.map((b, i) => (
           <View key={b.media.path} style={{ gap: 10, borderWidth: 1, borderColor: '#E7E1DB', borderRadius: 14, padding: 10 }}>
             <View style={{ height: 120, borderRadius: 10, overflow: 'hidden', backgroundColor: '#EEE8E1' }}>

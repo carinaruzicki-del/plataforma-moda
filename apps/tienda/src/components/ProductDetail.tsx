@@ -1,6 +1,6 @@
 'use client';
 
-import { available, CATEGORY_LABEL, FIT_LABEL, formatPesos } from '@plataforma/core';
+import { available, CATEGORY_LABEL, FIT_LABEL, formatPesos, priceWithoutTaxes, sortSizes } from '@plataforma/core';
 import Link from 'next/link';
 import { useState } from 'react';
 import { mediaUrl } from '@/lib/media';
@@ -58,6 +58,7 @@ export function ProductDetail({ id }: { id: string }) {
           {formatPesos(p.price)}
           {p.compareAtPrice ? <s>{formatPesos(p.compareAtPrice)}</s> : null}
         </div>
+        <NetPrice price={p.price} />
         <div className="chips">{facts.map((f) => <span key={f} className="pill accent">{f}</span>)}</div>
         {p.description && <p className="muted" style={{ margin: 0, whiteSpace: 'pre-line' }}>{p.description}</p>}
 
@@ -67,7 +68,7 @@ export function ProductDetail({ id }: { id: string }) {
             {home.sizeGuide.length > 0 && <button className="link small" onClick={() => setGuide(true)}>Guía de talles</button>}
           </div>
           <div className="sizes" role="radiogroup" aria-label="Talle">
-            {p.variants.map((v) => {
+            {(() => { const order = sortSizes(p.variants.map((v) => v.size)); return [...p.variants].sort((a, b) => order.indexOf(a.size) - order.indexOf(b.size)); })().map((v) => {
               const l = left(v.sku);
               const sold = available(v) <= 0;
               return (
@@ -116,4 +117,12 @@ export function ProductDetail({ id }: { id: string }) {
       {guide && <SizeGuide onClose={() => setGuide(false)} />}
     </div>
   );
+}
+
+/** Res. SIC 4/2025: el precio sin impuestos nacionales va en letra más chica que el final. */
+export function NetPrice({ price, label = 'Precio sin impuestos nacionales' }: { price: number; label?: string }) {
+  const { store } = useStore();
+  const net = priceWithoutTaxes(price, store?.fiscal);
+  if (net === null) return null;
+  return <p className="net-price">{label}: <span className="num">{formatPesos(net)}</span></p>;
 }

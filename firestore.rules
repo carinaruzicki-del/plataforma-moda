@@ -18,6 +18,17 @@ service cloud.firestore {
     function onlyChanges(fields) {
       return request.resource.data.diff(resource.data).affectedKeys().hasOnly(fields);
     }
+    // Datos de la vendedora (pie de la tienda). El CUIT se guarda con 11 dígitos.
+    function validFiscal(d) {
+      return !('fiscal' in d) || (
+        d.fiscal is map
+        && d.fiscal.keys().hasOnly(['legalName', 'cuit', 'address', 'taxStatus'])
+        && d.fiscal.legalName is string && d.fiscal.legalName.size() <= 120
+        && d.fiscal.cuit is string && d.fiscal.cuit.matches('^[0-9]{11}$')
+        && d.fiscal.address is string && d.fiscal.address.size() <= 200
+        && d.fiscal.taxStatus in ['responsable_inscripto', 'monotributo', 'exento']
+      );
+    }
     // Diseño de la tienda: solo estas claves y textos cortos. Lo que el plan no incluye se ignora al mostrarla.
     function validTheme(d) {
       return !('theme' in d) || (
@@ -46,8 +57,9 @@ service cloud.firestore {
       allow create, delete: if false; // createStore
       // La dueña edita la vitrina; plan, estado, dirección y pagos los cambia el servidor.
       allow update: if owner(storeId)
-        && onlyChanges(['name', 'tagline', 'accentColor', 'theme', 'logoPath', 'contact', 'pickup', 'flatShipping', 'updatedAt'])
+        && onlyChanges(['name', 'tagline', 'accentColor', 'theme', 'fiscal', 'logoPath', 'contact', 'pickup', 'flatShipping', 'updatedAt'])
         && validTheme(request.resource.data)
+        && validFiscal(request.resource.data)
         && request.resource.data.name is string && request.resource.data.name.size() >= 2;
 
       match /members/{uid} {

@@ -1,4 +1,4 @@
-import { designFeatures, resolveTheme } from '@plataforma/core';
+import { designFeatures, formatCuit, isValidCuit, resolveTheme, TAX_STATUS_LABEL, type TaxStatus } from '@plataforma/core';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
@@ -8,11 +8,12 @@ import { useEffect, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { db, errorMessage, mediaUrl, storage, storeLink } from '@/lib/firebase';
 import { useMerchant } from '@/lib/merchant';
-import { Button, Card, Field, Notice, P, s, Screen } from '@/ui';
+import { Button, Card, Chips, Field, Label, Notice, P, s, Screen, Title } from '@/ui';
 
 export default function StoreData() {
   const { store, storeId } = useMerchant();
   const [f, setF] = useState({ name: '', tagline: '', email: '', phone: '', whatsapp: '', instagram: '' });
+  const [fiscal, setFiscal] = useState<{ legalName: string; cuit: string; address: string; taxStatus: TaxStatus | null }>({ legalName: '', cuit: '', address: '', taxStatus: null });
   const [logoPath, setLogoPath] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -29,6 +30,7 @@ export default function StoreData() {
       instagram: store.contact.instagram ?? '',
     });
     setLogoPath(store.logoPath ?? null);
+    if (store.fiscal) setFiscal({ ...store.fiscal, cuit: formatCuit(store.fiscal.cuit) });
     setLoaded(true);
   }, [store, loaded]);
 
@@ -52,6 +54,11 @@ export default function StoreData() {
 
   async function save() {
     if (f.name.trim().length < 2) return setMsg({ text: 'Poné el nombre de la tienda.', tone: 'bad' });
+    const anyFiscal = fiscal.legalName.trim() || fiscal.cuit.trim() || fiscal.address.trim() || fiscal.taxStatus;
+    if (anyFiscal) {
+      if (!fiscal.legalName.trim() || !fiscal.address.trim() || !fiscal.taxStatus) return setMsg({ text: 'Completá razón social, domicilio y condición frente al IVA.', tone: 'bad' });
+      if (!isValidCuit(fiscal.cuit)) return setMsg({ text: 'Revisá el CUIT: tiene 11 números y el último es un dígito verificador.', tone: 'bad' });
+    }
     setBusy(true);
     setMsg(null);
     try {
@@ -59,6 +66,9 @@ export default function StoreData() {
         name: f.name.trim(),
         tagline: f.tagline.trim(),
         logoPath,
+        ...(anyFiscal
+          ? { fiscal: { legalName: fiscal.legalName.trim(), cuit: fiscal.cuit.replace(/\D/g, ''), address: fiscal.address.trim(), taxStatus: fiscal.taxStatus! } }
+          : {}),
         contact: {
           email: f.email.trim(),
           ...(f.phone.trim() ? { phone: f.phone.trim() } : {}),
@@ -97,6 +107,23 @@ export default function StoreData() {
           <Field label="Teléfono" value={f.phone} onChangeText={set('phone')} keyboardType="phone-pad" />
           <Field label="WhatsApp" value={f.whatsapp} onChangeText={set('whatsapp')} keyboardType="phone-pad" />
           <Field label="Instagram" value={f.instagram} onChangeText={set('instagram')} autoCapitalize="none" placeholder="@tutienda" />
+        </View>
+      </Card>
+      <Card>
+        <Title size={20}>Datos de la vendedora</Title>
+        <P small muted>
+          La ley pide que tus clientas vean quién les vende: se muestran en el pie de tu tienda. Si sos Responsable Inscripto,
+          además mostramos el "Precio sin impuestos nacionales" de cada prenda.
+        </P>
+        <View style={s.row}>
+          <Field label="Razón social o nombre y apellido" value={fiscal.legalName} onChangeText={(t) => setFiscal({ ...fiscal, legalName: t })} />
+          <Field label="CUIT" value={fiscal.cuit} onChangeText={(t) => setFiscal({ ...fiscal, cuit: t })} keyboardType="numbers-and-punctuation" placeholder="20-12345678-6"
+            error={fiscal.cuit && fiscal.cuit.replace(/\D/g, '').length === 11 && !isValidCuit(fiscal.cuit) ? 'Este CUIT no es válido.' : null} />
+        </View>
+        <Field label="Domicilio" value={fiscal.address} onChangeText={(t) => setFiscal({ ...fiscal, address: t })} placeholder="Calle, número, localidad, provincia" />
+        <View>
+          <Label>Condición frente al IVA</Label>
+          <Chips options={Object.keys(TAX_STATUS_LABEL) as TaxStatus[]} value={fiscal.taxStatus} onChange={(v) => setFiscal({ ...fiscal, taxStatus: v })} labels={TAX_STATUS_LABEL} />
         </View>
       </Card>
       {msg && <Notice text={msg.text} tone={msg.tone} />}

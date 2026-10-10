@@ -1,6 +1,11 @@
 import {
   CATEGORIES,
   CATEGORY_LABEL,
+  DEFAULT_SIZE_SYSTEM,
+  SIZE_SYSTEM_LABEL,
+  SIZE_SYSTEMS,
+  sortSizes,
+  type SizeSystem,
   FITLESS_CATEGORIES,
   FIT_LABEL,
   FITS,
@@ -32,13 +37,13 @@ interface VariantDraft {
   reserved: number;
 }
 
-const PRESETS: Array<[string, string[]]> = [
-  ['S M L XL', ['S', 'M', 'L', 'XL']],
-  ['1 al 4', ['1', '2', '3', '4']],
-  ['36 al 46', ['36', '38', '40', '42', '44', '46']],
-  ['Calzado 35 al 40', ['35', '36', '37', '38', '39', '40']],
-  ['Único', ['Único']],
-];
+const SYSTEMS = Object.keys(SIZE_SYSTEMS) as SizeSystem[];
+
+/** El sistema de talles que mejor describe los talles ya cargados. */
+function guessSystem(sizes: string[], category: Category): SizeSystem {
+  if (!sizes.length) return DEFAULT_SIZE_SYSTEM[category];
+  return SYSTEMS.find((k) => sizes.every((x) => (SIZE_SYSTEMS[k] as readonly string[]).includes(x))) ?? DEFAULT_SIZE_SYSTEM[category];
+}
 
 const newSku = () => `V${Date.now().toString(36).toUpperCase()}${Math.random().toString(36).slice(2, 5).toUpperCase()}`;
 
@@ -70,7 +75,9 @@ export default function ProductEditor() {
   const [price, setPrice] = useState('');
   const [compareAt, setCompareAt] = useState('');
   const [media, setMedia] = useState<Media[]>([]);
-  const [variants, setVariants] = useState<VariantDraft[]>(['S', 'M', 'L'].map((size) => ({ sku: newSku(), size, stock: '0', reserved: 0 })));
+  const [variants, setVariants] = useState<VariantDraft[]>([]);
+  const [system, setSystem] = useState<SizeSystem>('letras');
+  const [customSize, setCustomSize] = useState('');
   const [sectionIds, setSectionIds] = useState<string[]>([]);
   const [published, setPublished] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -92,12 +99,41 @@ export default function ProductEditor() {
     setCompareAt(existing.compareAtPrice ? String(existing.compareAtPrice) : '');
     setMedia(existing.media);
     setVariants(existing.variants.map((v) => ({ sku: v.sku, size: v.size, stock: String(v.stock), reserved: v.reserved })));
+    setSystem(guessSystem(existing.variants.map((v) => v.size), existing.category));
     setSectionIds(existing.sectionIds);
     setPublished(existing.published);
     setLoaded(true);
   }, [existing, loaded]);
 
+  // En una prenda nueva sin stock cargado, el sistema de talles sigue al tipo de prenda.
+  useEffect(() => {
+    if (isNew && variants.every((v) => !Number(v.stock))) setSystem(DEFAULT_SIZE_SYSTEM[category]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [category, isNew]);
+
   if (!storeId) return null;
+
+  const sorted = (() => {
+    const order = sortSizes(variants.map((v) => v.size));
+    return [...variants].sort((a, b) => order.indexOf(a.size) - order.indexOf(b.size));
+  })();
+  const hasSize = (size: string) => variants.some((v) => v.size === size);
+  function toggleSize(size: string) {
+    const v = variants.find((x) => x.size === size);
+    if (!v) return setVariants([...variants, { sku: newSku(), size, stock: '0', reserved: 0 }]);
+    if (v.reserved > 0) return setError(`El talle ${size} tiene unidades en compras en curso: no se puede sacar ahora.`);
+    setVariants(variants.filter((x) => x.size !== size));
+  }
+  function addCustom() {
+    const size = customSize.trim();
+    if (!size || hasSize(size)) return setCustomSize('');
+    setVariants([...variants, { sku: newSku(), size, stock: '0', reserved: 0 }]);
+    setCustomSize('');
+  }
+  function selectAll() {
+    const all = SIZE_SYSTEMS[system] as readonly string[];
+    setVariants([...variants, ...all.filter((x) => !hasSize(x)).map((size) => ({ sku: newSku(), size, stock: '0', reserved: 0 }))]);
+  }
   if (!isNew && !existing) return <Screen><P muted>Cargando prenda…</P></Screen>;
 
   const fitless = FITLESS_CATEGORIES.includes(category);
@@ -205,29 +241,47 @@ export default function ProductEditor() {
 
       <Card>
         <Title size={20}>Talles y stock</Title>
-        {variants.map((v, i) => (
-          <View key={v.sku} style={[s.row, { alignItems: 'center' }]}>
-            <TextInput value={v.size} onChangeText={(t) => setVariants(variants.map((x, j) => (j === i ? { ...x, size: t } : x)))} placeholder="Talle" style={[s.input, { flex: 1, minWidth: 80 }]} />
-            <TextInput value={v.stock} onChangeText={(t) => setVariants(variants.map((x, j) => (j === i ? { ...x, stock: t.replace(/\D/g, '') } : x)))} keyboardType="number-pad" placeholder="Unidades" style={[s.input, { flex: 1, minWidth: 80 }]} />
-            {v.reserved > 0 ? <P small muted>{v.reserved} en compras</P> : null}
-            <Button title="✕" variant="danger" small onPress={() => setVariants(variants.filter((_, j) => j !== i))} disabled={v.reserved > 0} />
-          </View>
-        ))}
-        <View style={s.row}>
-          <Button title="+ Talle" variant="ghost" small onPress={() => setVariants([...variants, { sku: newSku(), size: '', stock: '0', reserved: 0 }])} />
-          {PRESETS.map(([label, sizes]) => (
-            <Chip
-              key={label}
-              label={label}
-              onPress={() =>
-                setVariants([
-                  ...variants.filter((v) => v.reserved > 0 && !sizes.includes(v.size)),
-                  ...sizes.map((size) => variants.find((v) => v.size === size) ?? { sku: newSku(), size, stock: '0', reserved: 0 }),
-                ])
-              }
-            />
-          ))}
+        <View>
+          <Label>Tipo de talle</Label>
+          <Chips options={SYSTEMS} value={system} onChange={setSystem} labels={SIZE_SYSTEM_LABEL} />
         </View>
+        <View>
+          <View style={s.between}>
+            <Label>Tocá los talles que tenés</Label>
+            {SIZE_SYSTEMS[system].length > 1 && <Button title="Todos" variant="ghost" small onPress={selectAll} />}
+          </View>
+          <View style={s.row}>
+            {SIZE_SYSTEMS[system].map((size) => <Chip key={size} label={size} on={hasSize(size)} onPress={() => toggleSize(size)} />)}
+          </View>
+        </View>
+        <View style={[s.row, { alignItems: 'center' }]}>
+          <TextInput value={customSize} onChangeText={setCustomSize} onSubmitEditing={addCustom} placeholder="Otro talle (ej.: 2 años, 85B)" style={[s.input, { flex: 1, minWidth: 160 }]} />
+          <Button title="+ Agregar" variant="ghost" small onPress={addCustom} />
+        </View>
+        {sorted.length === 0 ? (
+          <P small muted>Elegí al menos un talle y cargá cuántas unidades tenés de cada uno.</P>
+        ) : (
+          <View style={{ gap: 8 }}>
+            <Label>Unidades por talle</Label>
+            {sorted.map((v) => (
+              <View key={v.sku} style={[s.row, { alignItems: 'center' }]}>
+                <View style={{ minWidth: 64, paddingVertical: 10, paddingHorizontal: 12, borderRadius: 12, backgroundColor: '#F2E8EB' }}>
+                  <Text style={{ fontFamily: 'Manrope_600SemiBold', color: '#754653', textAlign: 'center' }}>{v.size}</Text>
+                </View>
+                <TextInput
+                  value={v.stock}
+                  onChangeText={(t) => setVariants(variants.map((x) => (x.sku === v.sku ? { ...x, stock: t.replace(/\D/g, '') } : x)))}
+                  keyboardType="number-pad"
+                  placeholder="Unidades"
+                  accessibilityLabel={`Unidades del talle ${v.size}`}
+                  style={[s.input, { flex: 1, minWidth: 90 }]}
+                />
+                {v.reserved > 0 ? <P small muted>{v.reserved} en compras</P> : null}
+                <Button title="✕" variant="danger" small onPress={() => toggleSize(v.size)} disabled={v.reserved > 0} />
+              </View>
+            ))}
+          </View>
+        )}
       </Card>
 
       <Card>

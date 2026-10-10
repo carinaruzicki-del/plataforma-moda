@@ -1,6 +1,6 @@
 'use client';
 
-import { designFeatures, PLATFORM_NAME, resolveTheme } from '@plataforma/core';
+import { designFeatures, formatCuit, PLATFORM_NAME, resolveTheme, TAX_STATUS_LABEL } from '@plataforma/core';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useMemo, type ReactNode } from 'react';
@@ -101,6 +101,13 @@ function Chrome({ children }: { children: ReactNode }) {
       </header>
       <main className="wrap">{children}</main>
       <footer className="wrap footer">
+        {/* Ley 24.240: la clienta tiene que saber quién le vende. */}
+        {store.fiscal && (
+          <span className="seller small">
+            Vende: <b>{store.fiscal.legalName}</b> · CUIT {formatCuit(store.fiscal.cuit)} · {TAX_STATUS_LABEL[store.fiscal.taxStatus]} · {store.fiscal.address}
+            {store.contact.email ? ` · ${store.contact.email}` : ''}
+          </span>
+        )}
         {theme?.branding && (
           <span className="powered small muted">Creada con <b>{PLATFORM_NAME}</b></span>
         )}
@@ -111,6 +118,7 @@ function Chrome({ children }: { children: ReactNode }) {
         </span>
         <span style={{ display: 'flex', gap: 14, flexWrap: 'wrap', alignItems: 'center' }}>
           <Link href={href('/pedido')}>Mis pedidos</Link>
+          <Link href={href('/legales')}>Cambios, envíos y términos</Link>
           {/* Resolución 424/2020: acceso directo y visible desde todas las páginas. */}
           <Link href={href('/arrepentimiento')} className="regret">Botón de arrepentimiento</Link>
         </span>

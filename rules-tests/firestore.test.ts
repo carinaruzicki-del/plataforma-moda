@@ -44,6 +44,13 @@ describe('tiendas', () => {
     await assertFails(updateDoc(doc(as('duena'), 'stores/s1'), { theme: { palette: 'bosque', css: 'body{}' } }));
   });
 
+  it('la dueña carga sus datos fiscales con CUIT de 11 dígitos', async () => {
+    const fiscal = { legalName: 'Alma SAS', cuit: '30712345678', address: 'San Martín 123, Santa Fe', taxStatus: 'responsable_inscripto' };
+    await assertSucceeds(updateDoc(doc(as('duena'), 'stores/s1'), { fiscal }));
+    await assertFails(updateDoc(doc(as('duena'), 'stores/s1'), { fiscal: { ...fiscal, cuit: '30-71234567-8' } }));
+    await assertFails(updateDoc(doc(as('duena'), 'stores/s1'), { fiscal: { ...fiscal, taxStatus: 'otro' } }));
+  });
+
   it('una empleada no edita la tienda', () => assertFails(updateDoc(doc(as('emple'), 'stores/s1'), { name: 'Otra' })));
 
   it('nadie lee las credenciales de Mercado Pago', async () => {

@@ -1,6 +1,7 @@
 'use client';
 
 import { PROVINCES, type Address } from '@plataforma/core';
+import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState, type FormEvent } from 'react';
 import { accountErrorMessage, useAccount } from '@/lib/account';
@@ -26,6 +27,7 @@ export function AccountPage() {
 }
 
 function SignIn({ backToCheckout }: { backToCheckout: boolean }) {
+  const { href } = useStore();
   const { login, register, loginWithGoogle, resetPassword } = useAccount();
   const [mode, setMode] = useState<'ingresar' | 'crear' | 'olvide'>('ingresar');
   const [busy, setBusy] = useState(false);
@@ -93,6 +95,15 @@ function SignIn({ backToCheckout }: { backToCheckout: boolean }) {
             <label htmlFor="password">Contraseña</label>
             <input id="password" name="password" type="password" required minLength={6} autoComplete={mode === 'crear' ? 'new-password' : 'current-password'} />
           </div>
+        )}
+        {mode === 'crear' && (
+          <label className="small" style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+            <input type="checkbox" name="acepto" required style={{ marginTop: 3 }} />
+            <span>
+              Leí y acepto los <Link className="link" href={href('/legales#terminos')} target="_blank">términos</Link> y
+              la <Link className="link" href={href('/legales#privacidad')} target="_blank">política de privacidad</Link>.
+            </span>
+          </label>
         )}
         {error && <p className="error-text" role="alert">{error}</p>}
         {info && <div className="note">{info}</div>}

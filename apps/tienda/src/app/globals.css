@@ -292,3 +292,25 @@ input[type='range'] { accent-color: var(--accent); width: 100%; }
 [data-layout='minimal'] .grid { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; }
 @media (max-width: 1040px) { [data-layout='minimal'] .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (max-width: 860px) { [data-layout='minimal'] .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; } }
+
+/* asesor: acciones por prenda */
+.look-items { grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); }
+.look-item { display: grid; gap: 6px; align-content: start; border-radius: 14px; padding: 4px; }
+.look-item.swapping { background: var(--accent-soft); }
+.look-item-actions { display: grid; gap: 2px; justify-items: start; }
+.look-item-actions .link { font-size: 12px; text-align: left; }
+.look-swap { border-top: 1px dashed var(--line); padding-top: 10px; display: grid; gap: 8px; }
+.look-swap-list { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 4px; scroll-snap-type: x mandatory; }
+.look-swap-opt { flex: none; width: 150px; display: grid; gap: 6px; text-align: left; border: 1px solid var(--line); background: var(--surface); border-radius: 12px; padding: 6px; scroll-snap-align: start; cursor: pointer; }
+.look-swap-opt:hover { border-color: var(--accent-line); }
+.look-swap-img { display: block; aspect-ratio: 3 / 4; border-radius: 8px; overflow: hidden; }
+.net-price { margin: -4px 0 0; font-size: 12px; color: var(--muted); }
+.seller { width: 100%; order: -1; }
+
+/* textos legales */
+.legal { max-width: 760px; margin: 28px auto 0; display: grid; gap: 22px; }
+.legal h1 { font-size: 32px; }
+.legal section { display: grid; gap: 8px; scroll-margin-top: 90px; }
+.legal h2 { font-size: 22px; }
+.legal p, .legal li { margin: 0; line-height: 1.6; }
+.legal ol, .legal ul { margin: 0; padding-left: 20px; display: grid; gap: 6px; }

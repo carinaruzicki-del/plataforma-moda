@@ -3,6 +3,7 @@
 import { available, formatPesos } from '@plataforma/core';
 import Link from 'next/link';
 import { MediaView } from '@/components/MediaView';
+import { NetPrice } from '@/components/ProductDetail';
 import { ShippingCalculator } from '@/components/ShippingCalculator';
 import { coverOf } from '@/lib/media';
 import { useStore } from '@/lib/store-context';
@@ -52,6 +53,7 @@ export default function CartPage() {
       </section>
       <aside className="panel">
         <div className="total-row"><span>Subtotal</span><span className="num">{formatPesos(total)}</span></div>
+        <NetPrice price={total} label="Subtotal sin impuestos nacionales" />
         <ShippingCalculator subtotal={total} />
         <p className="small muted" style={{ margin: 0 }}>Pagás con Mercado Pago: tarjeta de crédito o débito, dinero en cuenta o efectivo.</p>
         {problems ? (
