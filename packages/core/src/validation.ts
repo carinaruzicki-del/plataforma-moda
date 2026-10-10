@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { CATEGORIES, FITS, LINES, OCCASIONS, SECTION_KINDS, STYLES } from './catalog';
+import { PROVINCES } from './shipping';
 import type { Plan, PlanId } from './types';
 
 // ---------------------------------------------------------------- subdominios
@@ -112,7 +113,7 @@ const addressSchema = z.object({
   number: z.string().trim().min(1).max(10),
   floor: z.string().trim().max(20).optional(),
   city: z.string().trim().min(2).max(60),
-  province: z.string().trim().min(2).max(60),
+  province: z.enum(PROVINCES, { errorMap: () => ({ message: 'Elegí la provincia.' }) }),
   postalCode: z.string().trim().regex(/^([A-Za-z]\d{4}[A-Za-z]{3}|\d{4})$/, 'Revisá el código postal.'),
   notes: z.string().trim().max(200).optional(),
 });
@@ -137,7 +138,8 @@ export const checkoutInputSchema = z
     }),
     delivery: z.discriminatedUnion('method', [
       z.object({ method: z.literal('retiro') }),
-      z.object({ method: z.literal('envio_propio'), zoneId: z.string().min(1), address: addressSchema }),
+      // La zona la calcula el servidor con la provincia y el código postal; zoneId es solo informativo.
+      z.object({ method: z.literal('envio_propio'), zoneId: z.string().min(1).optional(), address: addressSchema }),
     ]),
     note: z.string().trim().max(400).optional(),
   });

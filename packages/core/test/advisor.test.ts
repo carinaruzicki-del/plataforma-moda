@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { recommendLooks, type AdvisorPrefs } from '../src';
+import { alternativesFor, recommendLooks, sortSizes, type AdvisorPrefs } from '../src';
 import { product } from './fixtures';
 
 const prefs: AdvisorPrefs = {
@@ -104,5 +104,56 @@ describe('recommendLooks', () => {
       for (const it of look.items) expect([look.line, 'Unisex']).toContain(it.product.line);
     }
     expect(new Set(r.looks.map((l) => l.line))).toEqual(new Set(['Mujer', 'Hombre']));
+  });
+});
+
+describe('alternativesFor', () => {
+  const pollera = product({
+    id: 'pollera',
+    name: 'Pollera',
+    category: 'Abajo',
+    price: 50000,
+    variants: [{ sku: 'po-40', size: '40', stock: 1, reserved: 0 }],
+  });
+  const sinTalle = product({
+    id: 'sin-talle',
+    name: 'Pantalón 44',
+    category: 'Abajo',
+    price: 45000,
+    variants: [{ sku: 'p44', size: '44', stock: 3, reserved: 0 }],
+  });
+  const hombre = product({
+    id: 'chino',
+    name: 'Chino',
+    category: 'Abajo',
+    line: 'Hombre',
+    price: 40000,
+    variants: [{ sku: 'ch-40', size: '40', stock: 3, reserved: 0 }],
+  });
+
+  it('ofrece otra prenda del mismo tipo, con stock en el talle y de la misma colección', () => {
+    const all = [blusa, pantalon, cartera, pollera, sinTalle, hombre];
+    const r = recommendLooks(all, prefs);
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    const look = r.looks[0]!;
+    const idx = look.items.findIndex((x) => x.product.category === 'Abajo');
+    const alts = alternativesFor(all, prefs, look, idx);
+    const other = look.items[idx]!.product.id === 'pantalon' ? 'pollera' : 'pantalon';
+    expect(alts.map((a) => a.product.id)).toEqual([other]);
+    expect(alts[0]!.variant.size).toBe('40');
+  });
+
+  it('no repite prendas que ya están en el look', () => {
+    const r = recommendLooks([blusa, pantalon, cartera], prefs);
+    if (!r.ok) throw new Error('sin looks');
+    const idx = r.looks[0]!.items.findIndex((x) => x.product.id === 'pantalon');
+    expect(alternativesFor([blusa, pantalon, cartera], prefs, r.looks[0]!, idx)).toEqual([]);
+  });
+});
+
+describe('sortSizes', () => {
+  it('ordena letras, números y talle único como en una tienda', () => {
+    expect(sortSizes(['XL', '40', 'S', 'Único', '38', 'XS', '24'])).toEqual(['XS', 'S', 'XL', 'Único', '24', '38', '40']);
   });
 });

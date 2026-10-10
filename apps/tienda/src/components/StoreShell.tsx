@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { useEffect, type ReactNode } from 'react';
 import { StoreProvider, useStore } from '@/lib/store-context';
 import { mediaUrl } from '@/lib/media';
+import { AccountProvider, useAccount } from '@/lib/account';
 import { ToastProvider } from './Toast';
 
 const ICONS = {
@@ -19,6 +20,7 @@ function Chrome({ children }: { children: ReactNode }) {
   const path = usePathname() ?? '/';
   const rel = base && path.startsWith(base) ? path.slice(base.length) || '/' : path;
   const count = cart.reduce((s, l) => s + l.quantity, 0);
+  const { user } = useAccount();
 
   useEffect(() => {
     if (store) {
@@ -67,6 +69,9 @@ function Chrome({ children }: { children: ReactNode }) {
               <Link key={p} href={href(p)} className={is(p) ? 'on' : ''}>{l}</Link>
             ))}
           </nav>
+          <Link href={href('/cuenta')} className={`account-link${is('/cuenta') ? ' on' : ''}`}>
+            {user ? 'Mi cuenta' : 'Ingresar'}
+          </Link>
           <Link href={href('/carrito')} className="btn ghost sm cart-link">
             Carrito <span className="count num">{count}</span>
           </Link>
@@ -80,7 +85,7 @@ function Chrome({ children }: { children: ReactNode }) {
           {store.contact.instagram ? ` · @${store.contact.instagram.replace(/^@/, '')}` : ''}
         </span>
         <span style={{ display: 'flex', gap: 14, flexWrap: 'wrap', alignItems: 'center' }}>
-          <Link href={href('/pedido')}>Mi pedido</Link>
+          <Link href={href('/pedido')}>Mis pedidos</Link>
           {/* Resolución 424/2020: acceso directo y visible desde todas las páginas. */}
           <Link href={href('/arrepentimiento')} className="regret">Botón de arrepentimiento</Link>
         </span>
@@ -100,9 +105,11 @@ function Chrome({ children }: { children: ReactNode }) {
 export function StoreShell({ subdomain, children }: { subdomain: string; children: ReactNode }) {
   return (
     <StoreProvider subdomain={subdomain}>
-      <ToastProvider>
-        <Chrome>{children}</Chrome>
-      </ToastProvider>
+      <AccountProvider>
+        <ToastProvider>
+          <Chrome>{children}</Chrome>
+        </ToastProvider>
+      </AccountProvider>
     </StoreProvider>
   );
 }

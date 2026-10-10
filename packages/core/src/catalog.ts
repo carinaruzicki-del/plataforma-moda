@@ -52,3 +52,52 @@ export const FITLESS_CATEGORIES: readonly Category[] = ['Calzado', 'Accesorio'];
 
 /** Tipos de prenda que usan el talle "de arriba" de la clienta. */
 export const UPPER_SIZE_CATEGORIES: readonly Category[] = ['Arriba', 'Vestido', 'Abrigo'];
+
+// ---------------------------------------------------------------- talles
+
+/**
+ * Sistemas de talles que ofrece la plataforma. El comercio elige de estas listas (no escribe
+ * a mano), así todas las tiendas usan los mismos valores y el asesor puede comparar talles.
+ */
+export const SIZE_SYSTEMS = {
+  letras: ['XS', 'S', 'M', 'L', 'XL', 'XXL'],
+  pantalon: Array.from({ length: 31 }, (_, i) => String(24 + i)),
+  calzado: Array.from({ length: 14 }, (_, i) => String(33 + i)),
+  unico: ['Único'],
+} as const;
+export type SizeSystem = keyof typeof SIZE_SYSTEMS;
+
+export const SIZE_SYSTEM_LABEL: Record<SizeSystem, string> = {
+  letras: 'Letras (XS a XXL)',
+  pantalon: 'Números de pantalón (24 a 54)',
+  calzado: 'Calzado (33 a 46)',
+  unico: 'Talle único',
+};
+
+/** Sistema que se propone primero según el tipo de prenda (el comercio lo puede cambiar). */
+export const DEFAULT_SIZE_SYSTEM: Record<Category, SizeSystem> = {
+  Arriba: 'letras',
+  Abajo: 'pantalon',
+  Vestido: 'letras',
+  Abrigo: 'letras',
+  Calzado: 'calzado',
+  Accesorio: 'unico',
+};
+
+const SIZE_ORDER: string[] = [...SIZE_SYSTEMS.letras, ...SIZE_SYSTEMS.unico];
+
+/** Ordena talles como se leen en una tienda: XS, S, M… y los números de menor a mayor. */
+export function sortSizes(sizes: Iterable<string>): string[] {
+  const rank = (s: string): [number, number, string] => {
+    const i = SIZE_ORDER.indexOf(s);
+    if (i >= 0) return [0, i, s];
+    const n = Number(s.replace(',', '.'));
+    if (Number.isFinite(n)) return [1, n, s];
+    return [2, 0, s];
+  };
+  return [...new Set(sizes)].sort((a, b) => {
+    const [ga, na, sa] = rank(a);
+    const [gb, nb, sb] = rank(b);
+    return ga - gb || na - nb || sa.localeCompare(sb, 'es');
+  });
+}

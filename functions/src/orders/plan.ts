@@ -9,6 +9,7 @@ import {
   computeTotals,
   groupByProduct,
   needsRefund,
+  quoteShipping,
   readableCode,
   stockEffect,
   StockError,
@@ -90,11 +91,12 @@ export function planCheckout(opts: {
   if (input.delivery.method === 'retiro') {
     if (!store.pickup?.enabled) throw new UserError('Esta tienda no ofrece retiro en el local.');
   } else {
-    const zoneId = input.delivery.zoneId;
-    const zone = store.flatShipping?.enabled ? store.flatShipping.zones.find((z) => z.id === zoneId) : undefined;
-    if (!zone) throw new UserError('Elegí una zona de envío válida.', 'invalid-argument');
-    shipping = zone.price;
-    delivery.zoneId = zone.id;
+    // La zona y el precio los calcula el servidor con la dirección; nunca se usa lo que manda el navegador.
+    const subtotal = items.reduce((s, i) => s + i.unitPrice * i.quantity, 0);
+    const quote = quoteShipping(store, input.delivery.address, subtotal);
+    if (!quote) throw new UserError('Esta tienda no hace envíos a esa dirección. Elegí retiro en el local o escribile al local.');
+    shipping = quote.price;
+    delivery.zoneId = quote.zone.id;
     delivery.address = input.delivery.address;
   }
 

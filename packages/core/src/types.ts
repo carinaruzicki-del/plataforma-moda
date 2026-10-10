@@ -55,12 +55,29 @@ export interface Store {
   /** Envío con tarifa propia por zona (etapa 1). */
   flatShipping?: {
     enabled: boolean;
-    zones: Array<{ id: string; name: string; price: Pesos; postalCodePrefixes?: string[] }>;
+    zones: ShippingZone[];
   };
   /** True cuando la dueña conectó su cuenta de Mercado Pago. Las credenciales viven en `private/mp`. */
   mpConnected: boolean;
   createdAt: Millis;
   updatedAt: Millis;
+}
+
+/**
+ * Zona de envío con tarifa propia. La zona se elige sola a partir de la provincia (y el código
+ * postal) de la clienta. Una zona sin provincias cubre "el resto del país".
+ */
+export interface ShippingZone {
+  id: string;
+  name: string;
+  price: Pesos;
+  provinces?: string[];
+  /** Prefijos de código postal más específicos que la provincia (por ejemplo, "B16" para zona norte). */
+  postalCodePrefixes?: string[];
+  /** Texto para la clienta, por ejemplo "Llega en 3 a 5 días hábiles". */
+  eta?: string;
+  /** Envío gratis desde este monto de compra (opcional). */
+  freeFrom?: Pesos | null;
 }
 
 export type MemberRole = 'duena' | 'empleada';
@@ -145,8 +162,21 @@ export interface SizeGuideRow {
   hipCm?: string;
 }
 
+/**
+ * Cómo se muestra el banner de portada (siempre a todo el ancho):
+ * - `carrusel`: las piezas pasan solas, fotos y videos intercalados.
+ * - `fija`: una sola foto o video.
+ * - `mosaico`: hasta 3 piezas a la vez (por ejemplo, dos fotos y un video).
+ */
+export type BannerLayout = 'carrusel' | 'fija' | 'mosaico';
+
 export interface HomeSettings {
   banner: BannerSlide[];
+  bannerLayout?: BannerLayout;
+  /** Solo carrusel: si avanza solo. */
+  bannerAutoplay?: boolean;
+  /** Solo carrusel: segundos por pieza (los videos se muestran hasta que terminan, con este mínimo). */
+  bannerIntervalSec?: number;
   sizeGuide: SizeGuideRow[];
 }
 

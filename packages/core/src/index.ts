@@ -5,3 +5,4 @@ export * from './stock';
 export * from './advisor';
 export * from './validation';
 export * from './theme';
+export * from './shipping';

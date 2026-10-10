@@ -2,7 +2,7 @@
 
 import { totalAvailable } from '@plataforma/core';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { Banner } from '@/components/Banner';
 import { MediaView } from '@/components/MediaView';
 import { ProductCard } from '@/components/ProductCard';
 import { SectionCard } from '@/components/SectionCard';
@@ -10,47 +10,15 @@ import { coverOf } from '@/lib/media';
 import { useStore } from '@/lib/store-context';
 
 export default function StoreHome() {
-  const { store, home, products, sections, href } = useStore();
-  const slides = home.banner;
-  const [cur, setCur] = useState(0);
-
-  useEffect(() => {
-    if (slides.length < 2 || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    const t = setInterval(() => setCur((c) => (c + 1) % slides.length), 6000);
-    return () => clearInterval(t);
-  }, [slides.length]);
-
+  const { store, products, sections, href } = useStore();
   if (!store) return null;
-  const slide = slides[cur % Math.max(slides.length, 1)];
   const withProducts = sections.filter((s) => products.some((p) => p.sectionIds.includes(s.id)));
   const news = [...products].sort((a, b) => (totalAvailable(b.variants) > 0 ? 1 : 0) - (totalAvailable(a.variants) > 0 ? 1 : 0) || b.createdAt - a.createdAt).slice(0, 8);
   const pics = products.filter((p) => totalAvailable(p.variants) > 0 && coverOf(p)).slice(0, 3);
 
   return (
     <>
-      <section className="hero" aria-label="Portada">
-        {slides.map((s, i) => (
-          <div key={s.media.path} className={`slide${i === cur ? ' on' : ''}`}>
-            <MediaView media={s.media} alt={s.title || store.name} />
-          </div>
-        ))}
-        <div className="hero-copy">
-          <div className="eyebrow">{store.tagline || 'Tu estilo, tus planes'}</div>
-          <h1>{slide?.title || 'Encontrá prendas que vayan con vos.'}</h1>
-          <p>{slide?.subtitle || 'Explorá la colección o contanos qué plan tenés: te armamos looks con prendas de esta tienda.'}</p>
-          <div className="hero-actions">
-            <Link className="btn" href={href('/que-me-pongo')}>Armar mi look →</Link>
-            <Link className="btn ghost" href={slide?.sectionId ? href(`/seccion/${slide.sectionId}`) : href('/productos')}>Ver prendas</Link>
-          </div>
-        </div>
-        {slides.length > 1 && (
-          <div className="dots">
-            {slides.map((s, i) => (
-              <button key={s.media.path} aria-label={`Ver imagen ${i + 1}`} className={i === cur ? 'on' : ''} onClick={() => setCur(i)} />
-            ))}
-          </div>
-        )}
-      </section>
+      <Banner />
 
       {withProducts.length > 0 && (
         <>

@@ -183,3 +183,45 @@ function explainEmpty(products: readonly Product[], prefs: AdvisorPrefs): Adviso
     message: `Hay prendas para ${occ}, pero ninguna combinación completa coincide con tu talle, calce, estilo y presupuesto. Probá dejar el talle en "Cualquiera", subir el presupuesto o elegir otro estilo.`,
   };
 }
+
+/**
+ * Otras opciones para una prenda de un look ("me gusta la remera, buscame otro pantalón").
+ * Devuelve prendas del mismo tipo, de la misma colección, aptas para la ocasión, con stock en
+ * el talle de la clienta y que no estén ya en el look. Primero las que mantienen el look dentro
+ * del presupuesto, después por estilo, calce y precio parecido.
+ */
+export function alternativesFor(
+  products: readonly Product[],
+  prefs: AdvisorPrefs,
+  look: Pick<Look, 'line' | 'items'>,
+  index: number,
+  limit = 8,
+): LookItem[] {
+  const current = look.items[index];
+  if (!current) return [];
+  const inLook = new Set(look.items.map((x) => x.product.id));
+  const rest = look.items.reduce((s, x, i) => (i === index ? s : s + x.product.price), 0);
+  const out: Array<LookItem & { fits: boolean }> = [];
+  for (const p of products) {
+    if (!p.published || !(p.price > 0) || inLook.has(p.id)) continue;
+    if (p.category !== current.product.category) continue;
+    if (p.line !== look.line && p.line !== 'Unisex') continue;
+    if (!p.occasions.includes(prefs.occasion)) continue;
+    const variant = pickVariant(p, prefs.sizes);
+    if (!variant) continue;
+    const fs = fitScore(p, prefs.fit);
+    if (fs < 0) continue;
+    out.push({ product: p, variant, fitScore: fs, styleMatch: styleMatches(p, prefs.style), fits: rest + p.price <= prefs.budget });
+  }
+  const ref = current.product.price;
+  return out
+    .sort(
+      (a, b) =>
+        Number(b.fits) - Number(a.fits) ||
+        Number(b.styleMatch) - Number(a.styleMatch) ||
+        b.fitScore - a.fitScore ||
+        Math.abs(a.product.price - ref) - Math.abs(b.product.price - ref),
+    )
+    .slice(0, limit)
+    .map(({ fits: _f, ...item }) => item);
+}

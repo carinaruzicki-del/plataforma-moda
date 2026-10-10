@@ -34,7 +34,14 @@ await db.doc(`stores/${storeId}`).set({
   tagline: 'Tu estilo, tus planes',
   contact: { email },
   pickup: { enabled: true, address: 'Av. Corrientes 1234, CABA', hours: 'Lunes a sábados de 10 a 19' },
-  flatShipping: { enabled: true, zones: [{ id: 'caba', name: 'CABA', price: 5000 }, { id: 'gba', name: 'GBA', price: 7500 }] },
+  flatShipping: {
+    enabled: true,
+    zones: [
+      { id: 'caba', name: 'CABA', price: 5000, provinces: ['CABA'], eta: 'Llega en 24 a 48 h hábiles', freeFrom: 150000 },
+      { id: 'bsas', name: 'Provincia de Buenos Aires', price: 7500, provinces: ['Buenos Aires'], eta: 'Llega en 2 a 4 días hábiles' },
+      { id: 'resto', name: 'Resto del país', price: 11000, eta: 'Llega en 4 a 7 días hábiles' },
+    ],
+  },
   mpConnected: false,
   createdAt: now,
   updatedAt: now,
@@ -42,6 +49,9 @@ await db.doc(`stores/${storeId}`).set({
 await db.doc(`stores/${storeId}/members/${uid}`).set({ uid, role: 'duena', email, addedAt: now });
 await db.doc(`stores/${storeId}/settings/home`).set({
   banner: [],
+  bannerLayout: 'carrusel',
+  bannerAutoplay: true,
+  bannerIntervalSec: 6,
   sizeGuide: [
     { size: 'S', equivalence: '1', bustCm: '84-88', waistCm: '66-70', hipCm: '90-94' },
     { size: 'M', equivalence: '2', bustCm: '89-93', waistCm: '71-75', hipCm: '95-99' },

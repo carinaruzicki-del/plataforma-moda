@@ -13,7 +13,7 @@ const store: Store = {
   status: 'activa',
   contact: { email: 'hola@alma.test' },
   pickup: { enabled: true, address: 'Av. Siempre Viva 123', hours: 'Lun a Sáb 10 a 19' },
-  flatShipping: { enabled: true, zones: [{ id: 'caba', name: 'CABA', price: 5000 }] },
+  flatShipping: { enabled: true, zones: [{ id: 'caba', name: 'CABA', price: 5000, provinces: ['CABA'] }] },
   mpConnected: true,
   createdAt: 0,
   updatedAt: 0,
@@ -100,12 +100,12 @@ describe('planCheckout', () => {
     expect(() => checkout({ products: other })).toThrow(/ya no está disponible/);
   });
 
-  it('cobra el envío de la zona y exige que exista', () => {
-    const address = { street: 'Corrientes', number: '1234', city: 'CABA', province: 'CABA', postalCode: 'C1043AAZ' };
-    const env = { ...input, delivery: { method: 'envio_propio' as const, zoneId: 'caba', address } };
+  it('calcula el envío con la dirección, sin usar la zona que manda el navegador', () => {
+    const address = { street: 'Corrientes', number: '1234', city: 'CABA', province: 'CABA' as const, postalCode: 'C1043AAZ' };
+    const env = { ...input, delivery: { method: 'envio_propio' as const, zoneId: 'luna', address } };
     expect(checkout({ input: env }).order.totals).toMatchObject({ shipping: 5000, total: 89000, platformFee: 2520 });
-    const bad = { ...input, delivery: { method: 'envio_propio' as const, zoneId: 'luna', address } };
-    expect(() => checkout({ input: bad })).toThrow(/zona/);
+    const bad = { ...input, delivery: { method: 'envio_propio' as const, address: { ...address, province: 'Mendoza' as const, postalCode: '5500' } } };
+    expect(() => checkout({ input: bad })).toThrow(/no hace envíos/);
   });
 
   it('no deja comprar si la tienda no conectó Mercado Pago o está suspendida', () => {
