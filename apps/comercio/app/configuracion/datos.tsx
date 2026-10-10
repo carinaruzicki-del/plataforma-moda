@@ -1,4 +1,6 @@
+import { designFeatures, resolveTheme } from '@plataforma/core';
 import { Image } from 'expo-image';
+import { router } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { doc, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes } from 'firebase/storage';
@@ -6,13 +8,11 @@ import { useEffect, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { db, errorMessage, mediaUrl, storage, storeLink } from '@/lib/firebase';
 import { useMerchant } from '@/lib/merchant';
-import { Button, Card, Field, Label, Notice, P, s, Screen } from '@/ui';
-
-const ACCENTS = ['#754653', '#5B4A66', '#3E5677', '#586D55', '#8A6234', '#9B3B3B', '#292625'];
+import { Button, Card, Field, Notice, P, s, Screen } from '@/ui';
 
 export default function StoreData() {
   const { store, storeId } = useMerchant();
-  const [f, setF] = useState({ name: '', tagline: '', email: '', phone: '', whatsapp: '', instagram: '', accentColor: '#754653' });
+  const [f, setF] = useState({ name: '', tagline: '', email: '', phone: '', whatsapp: '', instagram: '' });
   const [logoPath, setLogoPath] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -27,13 +27,13 @@ export default function StoreData() {
       phone: store.contact.phone ?? '',
       whatsapp: store.contact.whatsapp ?? '',
       instagram: store.contact.instagram ?? '',
-      accentColor: store.accentColor ?? '#754653',
     });
     setLogoPath(store.logoPath ?? null);
     setLoaded(true);
   }, [store, loaded]);
 
   if (!store || !storeId) return null;
+  const accent = resolveTheme(store.theme, designFeatures(store.plan), store.accentColor).accent;
   const set = (k: keyof typeof f) => (t: string) => setF({ ...f, [k]: t });
 
   async function pickLogo() {
@@ -58,7 +58,6 @@ export default function StoreData() {
       await updateDoc(doc(db, 'stores', storeId!), {
         name: f.name.trim(),
         tagline: f.tagline.trim(),
-        accentColor: f.accentColor,
         logoPath,
         contact: {
           email: f.email.trim(),
@@ -80,7 +79,7 @@ export default function StoreData() {
     <Screen>
       <Card>
         <View style={[s.row, { alignItems: 'center' }]}>
-          <Pressable onPress={pickLogo} style={{ width: 72, height: 72, borderRadius: 36, overflow: 'hidden', backgroundColor: f.accentColor, alignItems: 'center', justifyContent: 'center' }}>
+          <Pressable onPress={pickLogo} style={{ width: 72, height: 72, borderRadius: 36, overflow: 'hidden', backgroundColor: accent, alignItems: 'center', justifyContent: 'center' }}>
             {logoPath ? <Image source={{ uri: mediaUrl(logoPath) }} style={{ width: 72, height: 72 }} /> : <P style={{ color: '#fff', fontSize: 28 }}>{f.name.charAt(0) || '✦'}</P>}
           </Pressable>
           <View style={{ flex: 1 }}>
@@ -90,13 +89,7 @@ export default function StoreData() {
         </View>
         <Field label="Nombre" value={f.name} onChangeText={set('name')} />
         <Field label="Frase corta" value={f.tagline} onChangeText={set('tagline')} placeholder="Ej.: Moda para todos los días" />
-        <Label>Color principal</Label>
-        <View style={s.row}>
-          {ACCENTS.map((c) => (
-            <Pressable key={c} accessibilityLabel={`Color ${c}`} onPress={() => setF({ ...f, accentColor: c })}
-              style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: c, borderWidth: f.accentColor === c ? 3 : 0, borderColor: '#E7CBD4' }} />
-          ))}
-        </View>
+        <Button title="Colores y diseño →" variant="ghost" small onPress={() => router.push('/configuracion/diseno')} />
       </Card>
       <Card>
         <View style={s.row}>

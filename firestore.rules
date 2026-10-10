@@ -18,6 +18,17 @@ service cloud.firestore {
     function onlyChanges(fields) {
       return request.resource.data.diff(resource.data).affectedKeys().hasOnly(fields);
     }
+    // Diseño de la tienda: solo estas claves y textos cortos. Lo que el plan no incluye se ignora al mostrarla.
+    function validTheme(d) {
+      return !('theme' in d) || (
+        d.theme is map
+        && d.theme.keys().hasOnly(['palette', 'accent', 'font', 'layout'])
+        && (!('palette' in d.theme) || (d.theme.palette is string && d.theme.palette.size() <= 20))
+        && (!('accent' in d.theme) || (d.theme.accent is string && d.theme.accent.matches('^#[0-9a-fA-F]{6}$')))
+        && (!('font' in d.theme) || (d.theme.font is string && d.theme.font.size() <= 20))
+        && (!('layout' in d.theme) || (d.theme.layout is string && d.theme.layout.size() <= 20))
+      );
+    }
 
     // ---------------------------------------------------------- planes y direcciones (lectura pública)
     match /plans/{planId} {
@@ -35,7 +46,8 @@ service cloud.firestore {
       allow create, delete: if false; // createStore
       // La dueña edita la vitrina; plan, estado, dirección y pagos los cambia el servidor.
       allow update: if owner(storeId)
-        && onlyChanges(['name', 'tagline', 'accentColor', 'logoPath', 'contact', 'pickup', 'flatShipping', 'updatedAt'])
+        && onlyChanges(['name', 'tagline', 'accentColor', 'theme', 'logoPath', 'contact', 'pickup', 'flatShipping', 'updatedAt'])
+        && validTheme(request.resource.data)
         && request.resource.data.name is string && request.resource.data.name.size() >= 2;
 
       match /members/{uid} {

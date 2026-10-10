@@ -1,8 +1,9 @@
 'use client';
 
+import { designFeatures, PLATFORM_NAME, resolveTheme } from '@plataforma/core';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, useMemo, type ReactNode } from 'react';
 import { StoreProvider, useStore } from '@/lib/store-context';
 import { mediaUrl } from '@/lib/media';
 import { AccountProvider, useAccount } from '@/lib/account';
@@ -22,12 +23,33 @@ function Chrome({ children }: { children: ReactNode }) {
   const count = cart.reduce((s, l) => s + l.quantity, 0);
   const { user } = useAccount();
 
+  const theme = useMemo(() => (store ? resolveTheme(store.theme, designFeatures(store.plan), store.accentColor) : null), [store]);
+
   useEffect(() => {
-    if (store) {
-      document.title = store.name;
-      if (store.accentColor) document.documentElement.style.setProperty('--accent', store.accentColor);
-    }
+    if (store) document.title = store.name;
   }, [store]);
+
+  // Diseño de la tienda: colores, tipografía de títulos y estructura, según lo que incluye su plan.
+  useEffect(() => {
+    if (!theme) return;
+    const root = document.documentElement;
+    root.style.setProperty('--accent', theme.accent);
+    root.style.setProperty('--accent-dark', theme.accentDark);
+    root.style.setProperty('--accent-soft', theme.accentSoft);
+    root.style.setProperty('--accent-line', theme.accentLine);
+    root.style.setProperty('--font-display', `'${theme.font.family}'`);
+    root.dataset.layout = theme.layout;
+    if (theme.font.id !== 'fraunces' && theme.font.id !== 'manrope') {
+      const id = `font-${theme.font.id}`;
+      if (!document.getElementById(id)) {
+        const link = document.createElement('link');
+        link.id = id;
+        link.rel = 'stylesheet';
+        link.href = `https://fonts.googleapis.com/css2?family=${theme.font.css}&display=swap`;
+        document.head.appendChild(link);
+      }
+    }
+  }, [theme]);
 
   if (status === 'cargando') {
     return <div className="wrap center"><b style={{ fontFamily: 'var(--font-display)', fontSize: 22 }}>Abriendo la tienda…</b></div>;
@@ -79,6 +101,9 @@ function Chrome({ children }: { children: ReactNode }) {
       </header>
       <main className="wrap">{children}</main>
       <footer className="wrap footer">
+        {theme?.branding && (
+          <span className="powered small muted">Creada con <b>{PLATFORM_NAME}</b></span>
+        )}
         <span>
           {store.name}
           {store.contact.whatsapp ? ` · WhatsApp ${store.contact.whatsapp}` : ''}

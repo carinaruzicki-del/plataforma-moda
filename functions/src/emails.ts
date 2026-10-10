@@ -1,5 +1,7 @@
 import {
   colors,
+  designFeatures,
+  resolveTheme,
   formatPesos,
   STATUS_LABEL,
   WITHDRAWAL_DAYS,
@@ -49,7 +51,7 @@ const esc = (s: string) =>
   s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
 
 function layout(store: Store, title: string, body: string, cta?: { label: string; url: string }) {
-  const accent = store.accentColor || colors.plum;
+  const accent = resolveTheme(store.theme, designFeatures(store.plan), store.accentColor).accent;
   return `<!doctype html><html lang="es"><body style="margin:0;background:${colors.paper};font-family:Arial,Helvetica,sans-serif;color:${colors.ink}">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:24px 12px">
 <table role="presentation" width="100%" style="max-width:560px;background:${colors.surface};border:1px solid ${colors.line};border-radius:16px" cellpadding="0" cellspacing="0">

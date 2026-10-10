@@ -28,7 +28,9 @@ await db.doc(`stores/${storeId}`).set({
   subdomain: 'demo',
   customDomain: null,
   ownerUid: uid,
-  plan: 'inicial',
+  // Para probar el plan gratis, cambiá a 'inicial' (o editalo en el Emulator UI).
+  plan: process.env.SEED_PLAN || 'profesional',
+  theme: { palette: 'ciruela', layout: 'clasico' },
   status: 'activa',
   logoPath: null,
   tagline: 'Tu estilo, tus planes',

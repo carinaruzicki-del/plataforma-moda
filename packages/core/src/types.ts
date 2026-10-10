@@ -1,4 +1,5 @@
 import type { Category, Fit, Line, Occasion, SectionKind, Style } from './catalog';
+import type { DesignFeatures, StoreTheme } from './theme';
 
 /** Milisegundos desde 1970 (Date.now()). Se usa en vez de Timestamp para que el núcleo no dependa de Firebase. */
 export type Millis = number;
@@ -8,7 +9,7 @@ export type Pesos = number;
 
 // ---------------------------------------------------------------- planes
 
-export type PlanId = 'inicial' | 'pro' | 'plus';
+export type PlanId = 'inicial' | 'esencial' | 'profesional';
 
 export interface Plan {
   id: PlanId;
@@ -21,6 +22,7 @@ export interface Plan {
     customDomain: boolean;
     carrierShipping: boolean;
     staffSeats: number;
+    design: DesignFeatures;
   };
 }
 
@@ -38,8 +40,10 @@ export interface Store {
   plan: PlanId;
   status: StoreStatus;
   logoPath?: string | null;
-  /** Color principal de la tienda (hex). Por defecto, el ciruela de la plataforma. */
+  /** Color principal de versiones anteriores. Ahora se usa `theme`. */
   accentColor?: string;
+  /** Paleta, color, tipografía y diseño. Lo que no incluye el plan se ignora al mostrar la tienda. */
+  theme?: StoreTheme;
   tagline?: string;
   contact: {
     email: string;

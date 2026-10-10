@@ -1,3 +1,4 @@
+import { DEFAULT_PLANS } from '@plataforma/core';
 import { router, type Href } from 'expo-router';
 import { signOut } from 'firebase/auth';
 import { Linking, Pressable, View } from 'react-native';
@@ -26,7 +27,8 @@ export default function StoreMenu() {
       badge: store.mpConnected ? { label: 'Conectado', tone: 'ok' } : { label: 'Sin conectar', tone: 'low' },
       ownerOnly: true,
     },
-    { href: '/configuracion/datos', title: 'Datos de la tienda', text: 'Nombre, logo, color y contacto', ownerOnly: true },
+    { href: '/configuracion/diseno', title: 'Diseño', text: 'Colores, tipografía y estructura de tu tienda', ownerOnly: true },
+    { href: '/configuracion/datos', title: 'Datos de la tienda', text: 'Nombre, logo y contacto', ownerOnly: true },
   ];
 
   return (
@@ -34,7 +36,7 @@ export default function StoreMenu() {
       <Title>{store.name}</Title>
       <View style={s.row}>
         <Button title="Ver mi tienda" variant="outline" small onPress={() => Linking.openURL(storeLink(store.subdomain))} />
-        <Pill label={`Plan ${store.plan}`} />
+        <Pill label={`Plan ${DEFAULT_PLANS[store.plan]?.name ?? store.plan}`} />
       </View>
       {memberships && memberships.length > 1 && (
         <Card>

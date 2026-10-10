@@ -44,6 +44,7 @@ export default function RootLayout() {
           <Stack.Screen name="configuracion/entregas" options={{ title: 'Entregas' }} />
           <Stack.Screen name="configuracion/pagos" options={{ title: 'Cobros' }} />
           <Stack.Screen name="configuracion/datos" options={{ title: 'Datos de la tienda' }} />
+          <Stack.Screen name="configuracion/diseno" options={{ title: 'Diseño' }} />
         </Stack>
       </MerchantProvider>
     </SafeAreaProvider>

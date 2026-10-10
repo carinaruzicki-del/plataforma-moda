@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { CATEGORIES, FITS, LINES, OCCASIONS, SECTION_KINDS, STYLES } from './catalog';
 import { PROVINCES } from './shipping';
+import type { DesignFeatures } from './theme';
 import type { Plan, PlanId } from './types';
 
 // ---------------------------------------------------------------- subdominios
@@ -157,20 +158,46 @@ export const DEFAULT_PLANS: Record<PlanId, Plan> = {
     name: 'Inicial',
     monthlyFee: 0,
     commissionPct: 3,
-    features: { customDomain: false, carrierShipping: false, staffSeats: 0 },
+    features: {
+      customDomain: false,
+      carrierShipping: false,
+      staffSeats: 0,
+      design: { freeColor: false, fontChoice: false, layouts: ['clasico'], branding: true },
+    },
   },
-  pro: {
-    id: 'pro',
-    name: 'Pro',
-    monthlyFee: 25000,
+  esencial: {
+    id: 'esencial',
+    name: 'Esencial',
+    monthlyFee: 19999,
     commissionPct: 1.5,
-    features: { customDomain: true, carrierShipping: true, staffSeats: 3 },
+    features: {
+      customDomain: true,
+      carrierShipping: true,
+      staffSeats: 2,
+      design: { freeColor: true, fontChoice: false, layouts: ['clasico'], branding: false },
+    },
   },
-  plus: {
-    id: 'plus',
-    name: 'Plus',
-    monthlyFee: 70000,
+  profesional: {
+    id: 'profesional',
+    name: 'Profesional',
+    monthlyFee: 49999,
     commissionPct: 0.8,
-    features: { customDomain: true, carrierShipping: true, staffSeats: 15 },
+    features: {
+      customDomain: true,
+      carrierShipping: true,
+      staffSeats: 10,
+      design: { freeColor: true, fontChoice: true, layouts: ['clasico', 'editorial', 'minimal'], branding: false },
+    },
   },
 };
+
+/** Funciones de diseño del plan. Si el documento del plan no las trae, se usan las de fábrica. */
+export function designFeatures(planId: PlanId | string | undefined, plan?: Partial<Plan> | null): DesignFeatures {
+  return plan?.features?.design ?? (DEFAULT_PLANS[planId as PlanId] ?? DEFAULT_PLANS.inicial).features.design;
+}
+
+/** Plan más barato que incluye una función de diseño (para mostrar "Disponible en …"). */
+export function cheapestPlanWith(test: (d: DesignFeatures) => boolean): Plan | null {
+  return Object.values(DEFAULT_PLANS).filter((p) => test(p.features.design)).sort((a, b) => a.monthlyFee - b.monthlyFee)[0] ?? null;
+}
+

@@ -34,8 +34,14 @@ describe('tiendas', () => {
 
   it('la dueña edita la vitrina pero no el plan ni los pagos', async () => {
     await assertSucceeds(updateDoc(doc(as('duena'), 'stores/s1'), { name: 'Alma Indumentaria', updatedAt: 1 }));
-    await assertFails(updateDoc(doc(as('duena'), 'stores/s1'), { plan: 'plus' }));
+    await assertFails(updateDoc(doc(as('duena'), 'stores/s1'), { plan: 'profesional' }));
     await assertFails(updateDoc(doc(as('duena'), 'stores/s1'), { mpConnected: false }));
+  });
+
+  it('la dueña elige el diseño, con valores válidos', async () => {
+    await assertSucceeds(updateDoc(doc(as('duena'), 'stores/s1'), { theme: { palette: 'bosque', accent: '#1F3A5F', font: 'playfair', layout: 'minimal' } }));
+    await assertFails(updateDoc(doc(as('duena'), 'stores/s1'), { theme: { accent: 'red' } }));
+    await assertFails(updateDoc(doc(as('duena'), 'stores/s1'), { theme: { palette: 'bosque', css: 'body{}' } }));
   });
 
   it('una empleada no edita la tienda', () => assertFails(updateDoc(doc(as('emple'), 'stores/s1'), { name: 'Otra' })));
